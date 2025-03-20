@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <script defer src="scripts/hangman.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <h1>'Hangman' - Enjoy</h1>
+        <div class="hangman-image">
+            <img id="hangman" src="images/step0.png" alt="Hangman Stage">
+        </div>
+        <div class="word-container">
+            <p class="hint">Hint: <span id="hint"></span></p>
+            <div id="word-display"></div>
+        </div>
+        <p class="incorrect-guesses">Incorrect guesses: <span id="incorrect-count">0</span>/7</p>
+        <div id="keyboard"></div>
+        <p class="instructions">
+            Guess a letter from the mystery word... you have a limited number of chances to guess the entire word. 
+            Unfortunately, Kenny McCormick will suffer the consequences for each wrong guess.
+        </p>
+    </div>
+    <div id="game-over" class="hidden">
+        <img id="game-over-image" src="" alt="Game Over">
+        <p id="game-over-text"></p>
+        <button id="play-again">Play Again</button>
+    </div>
+</body>
+</html>
