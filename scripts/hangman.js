@@ -1,110 +1,109 @@
-document.addEventListener("DOMContentLoaded", () => {
-  let wordData, selectedWord, hint, correctGuesses, incorrectGuesses;
-  const maxIncorrect = 6;
+$(document).ready(function () {
+  let words = [];
+  let selectedWord = "";
+  let hint = "";
+  let guessedLetters = [];
+  let wrongGuesses = 0;
+  const maxWrongGuesses = 7;
 
-  const hangmanImage = document.getElementById("hangman");
-  const wordDisplay = document.getElementById("word-display");
-  const hintDisplay = document.getElementById("hint");
-  const incorrectCount = document.getElementById("incorrect-count");
-  const keyboard = document.getElementById("keyboard");
-  const gameOverScreen = document.getElementById("game-over");
-  const gameOverText = document.getElementById("game-over-text");
-  const gameOverImage = document.getElementById("game-over-image");
-  const playAgainButton = document.getElementById("play-again");
-
-  function fetchWords() {
+  function loadWords() {
     fetch("./data/hangman.json")
       .then((response) => response.json())
       .then((data) => {
-        wordData = data.words;
-        startNewGame();
-      })
-      .catch((error) => console.error("Error loading words:", error));
+        words = data.words;
+        startGame();
+      });
   }
 
-  function startNewGame() {
-    gameOverScreen.classList.add("hidden");
-    incorrectGuesses = 0;
-    correctGuesses = [];
+  function startGame() {
+    $("#game-result").hide();
+    guessedLetters = [];
+    wrongGuesses = 0;
+    $("#wrong-count").text(wrongGuesses);
+    $("#hangman-stage").attr("src", `./images/step${wrongGuesses}.png`);
+    $("#keyboard").empty();
 
-    let randomIndex = Math.floor(Math.random() * wordData.length);
-    selectedWord = wordData[randomIndex].word;
-    hint = wordData[randomIndex].hint;
+    let randomIndex = Math.floor(Math.random() * words.length);
+    selectedWord = words[randomIndex].word.toUpperCase();
+    hint = words[randomIndex].hint;
+    $("#hint").text(hint);
 
-    hintDisplay.textContent = hint;
-    wordDisplay.innerHTML = "_ ".repeat(selectedWord.length).trim();
-    incorrectCount.textContent = incorrectGuesses;
-    hangmanImage.src = "./images/step0.png";
-
-    keyboard.innerHTML = "";
+    displayWord();
     createKeyboard();
   }
 
+  function displayWord() {
+    let display = "";
+    for (let letter of selectedWord) {
+      if (guessedLetters.includes(letter)) {
+        display += `<span class='letter fade'>${letter}</span> `;
+      } else {
+        display += "_ ";
+      }
+    }
+    $("#word-display").html(display);
+  }
+
   function createKeyboard() {
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-    letters.forEach((letter) => {
-      let button = document.createElement("button");
-      button.textContent = letter;
-      button.addEventListener("click", () => guessLetter(letter, button));
-      keyboard.appendChild(button);
-    });
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for (let letter of alphabet) {
+      let button = $("<button>").text(letter).addClass("letter-btn");
+      button.click(() => guessLetter(letter, button));
+      $("#keyboard").append(button);
+    }
   }
 
   function guessLetter(letter, button) {
-    button.disabled = true;
-    let lowerLetter = letter.toLowerCase();
+    $(button).prop("disabled", true);
 
-    if (selectedWord.includes(lowerLetter)) {
-      correctGuesses.push(lowerLetter);
-      updateWordDisplay();
+    if (selectedWord.includes(letter)) {
+      guessedLetters.push(letter);
+      displayWord();
+      $(".fade").hide().fadeIn(500); // Fade effect on correct guess
     } else {
-      incorrectGuesses++;
-      incorrectCount.textContent = incorrectGuesses;
-      if (incorrectGuesses <= maxIncorrect) {
-        hangmanImage.src = `./images/step${incorrectGuesses}.png`;
-      } else {
-        hangmanImage.src = `./images/step7.png`;
-      }
+      wrongGuesses++;
+      $("#wrong-count").text(wrongGuesses);
+      $("#hangman-stage").fadeOut(300, function () {
+        $(this).attr("src", `./images/step${wrongGuesses}.png`).fadeIn(300);
+      });
     }
 
     checkGameStatus();
   }
 
-  function updateWordDisplay() {
-    let displayWord = selectedWord
-      .split("")
-      .map((char) => (correctGuesses.includes(char) ? char : "_"))
-      .join(" ");
-    wordDisplay.textContent = displayWord;
-  }
-
   function checkGameStatus() {
-    if (
-      incorrectGuesses <= maxIncorrect &&
-      !wordDisplay.textContent.includes("_")
-    ) {
-      endGame(true);
-    } else if (incorrectGuesses > maxIncorrect) {
-      endGame(false);
+    if (!$("#word-display").text().includes("_")) {
+      showGameResult("win");
+    } else if (wrongGuesses >= maxWrongGuesses) {
+      showGameResult("loss");
     }
   }
 
-  function endGame(win) {
-    gameOverScreen.classList.remove("hidden");
-
-    if (win) {
-      gameOverImage.src = "./images/win.png";
-      hangmanImage.src = "./images/beam.png";
-    } else {
-      gameOverImage.src = "./images/lose.png";
-    }
-
-    gameOverText.innerHTML = win
-      ? `YOU WON!<br>Word was '${selectedWord}'`
-      : `You lost.<br>Word was '${selectedWord}'`;
+  function showGameResult(status) {
+    $("#game-container").fadeOut(500, function () {
+      $("#game-result").fadeIn(800);
+      if (status === "win") {
+        $("#result-text").text(
+          `YOU WON! Word was '${selectedWord.toLowerCase()}'`
+        );
+        $("#win-img").fadeIn(500);
+        $("#loss-img").hide();
+      } else {
+        $("#result-text").text(
+          `You lost. Word was '${selectedWord.toLowerCase()}'`
+        );
+        $("#loss-img").fadeIn(500);
+        $("#win-img").hide();
+      }
+    });
   }
 
-  playAgainButton.addEventListener("click", startNewGame);
+  $("#play-again").click(function () {
+    $("#game-result").fadeOut(500, function () {
+      $("#game-container").fadeIn(800);
+      startGame();
+    });
+  });
 
-  fetchWords();
+  loadWords();
 });
